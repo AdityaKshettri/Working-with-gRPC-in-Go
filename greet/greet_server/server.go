@@ -11,6 +11,8 @@ import (
 
 	"github.com/AdityaKshettri/grpc-go/greet/greetpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct{}
@@ -99,4 +101,21 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to server : %v", err)
 	}
+}
+
+func (*server) GreetWithDealine(ctx context.Context, req *greetpb.GreetWithDealineRequest) (*greetpb.GreetWithDealineResponse, error) {
+	fmt.Printf("GreetWithDealine function was invoked with %v\n", req)
+	for i := 0; i < 3; i++ {
+		if ctx.Err() == context.Canceled {
+			fmt.Println("Client cancelled the request!")
+			return nil, status.Error(codes.Canceled, "Client cancelled the request!")
+		}
+		time.Sleep(1 * time.Second)
+	}
+	firstName := req.GetGreeting().GetFirstName()
+	result := "Hello " + firstName
+	res := &greetpb.GreetWithDealineResponse{
+		Result: result,
+	}
+	return res, nil
 }
